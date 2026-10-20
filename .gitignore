@@ -1,0 +1,24 @@
+# phụ thuộc
+node_modules/
+
+# kết quả build
+dist/
+
+# ảnh chụp / công cụ kiểm thử
+tools/flower-lab/shots/
+tools/flower-lab/flower-lab.html
+tools/**/*.chrome-profile/
+
+# hệ điều hành
+.DS_Store
+Thumbs.db
+
+# nhật ký & tạm
+*.log
+npm-debug.log*
+.tmp/
+tmp_*.mjs
+
+# ảnh gốc nặng (42MB) — bản dùng trong web là assets/imgs/opt/
+assets/imgs/*.PNG
+assets/imgs/*.JPG

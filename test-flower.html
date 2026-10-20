@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="utf-8" />
+        <title>Test hoa</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+                background: #1a1520;
+                overflow: hidden;
+            }
+            canvas {
+                display: block;
+            }
+        </style>
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "./node_modules/three/build/three.module.js",
+                    "three/addons/": "./node_modules/three/examples/jsm/"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <script type="module">
+            import * as THREE from "three";
+            import {
+                buildSpeciesTemplate,
+                createPlantMaterials,
+                plantUniforms,
+            } from "/src/flowers/flowerFactory.js";
+            import {
+                SPECIES,
+                SPECIES_IDS,
+            } from "/src/flowers/flowerSpecies.js";
+            import { makeRng } from "/src/utils/rng.js";
+
+            const params = new URLSearchParams(location.search);
+            const speciesId = params.get("s") || "rose";
+            const count = Number(params.get("n") || 5);
+            const open = Number(params.get("open") || 1);
+            const camParam = (params.get("cam") || "0,1.05,1.5,0,0.85,0")
+                .split(",")
+                .map(Number);
+            const lod = params.get("lod") || "high";
+            const seg = (params.get("seg") || "10,5").split(",").map(Number);
+            const leafSeg = (params.get("leafseg") || "9,5").split(",").map(Number);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.setPixelRatio(1);
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.06;
+            document.body.appendChild(renderer.domElement);
+
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x2a2430);
+            const camera = new THREE.PerspectiveCamera(
+                40,
+                innerWidth / innerHeight,
+                0.1,
+                100,
+            );
+            camera.position.set(camParam[0], camParam[1], camParam[2]);
+            camera.lookAt(camParam[3], camParam[4], camParam[5]);
+
+            scene.add(new THREE.HemisphereLight(0xffe3ee, 0x4a6b4a, 0.85));
+            const sun = new THREE.DirectionalLight(0xfff1d0, 2.1);
+            sun.position.set(18, 26, 14);
+            scene.add(sun);
+            const fill = new THREE.DirectionalLight(0xffc4d8, 0.55);
+            fill.position.set(-14, 10, 18);
+            scene.add(fill);
+            const rim = new THREE.DirectionalLight(0xfff0cf, 0.5);
+            rim.position.set(-6, 8, -24);
+            scene.add(rim);
+
+            const mats = createPlantMaterials();
+            const species = SPECIES[speciesId];
+            const tpl = buildSpeciesTemplate(speciesId, {
+                rng: makeRng(12345),
+                lod,
+                seg,
+                leafSeg,
+            });
+
+            const dummy = new THREE.Object3D();
+            const tmp = new THREE.Color();
+            const n = count;
+            const opens = new Float32Array(n).fill(1);
+            const tints = new Float32Array(n * 3);
+            for (let i = 0; i < n; i++) {
+                tmp.set(species.schemes[i % species.schemes.length].tint);
+                tints[i * 3] = tmp.r;
+                tints[i * 3 + 1] = tmp.g;
+                tints[i * 3 + 2] = tmp.b;
+            }
+            function mk(geo, mat) {
+                if (!geo) return null;
+                geo.setAttribute(
+                    "aOpen",
+                    new THREE.InstancedBufferAttribute(opens, 1),
+                );
+                geo.setAttribute(
+                    "aInstTint",
+                    new THREE.InstancedBufferAttribute(tints, 3),
+                );
+                const mesh = new THREE.InstancedMesh(geo, mat, n);
+                mesh.frustumCulled = false;
+                return mesh;
+            }
+            const sm = mk(tpl.soft, mats.soft);
+            const fm = mk(tpl.foliage, mats.foliage);
+            const cols = Math.ceil(Math.sqrt(n));
+            for (let i = 0; i < n; i++) {
+                const gx = (i % cols) - (cols - 1) / 2;
+                const gz = Math.floor(i / cols) - (Math.ceil(n / cols) - 1) / 2;
+                dummy.position.set(gx * 1.6, 0, gz * 1.6);
+                dummy.rotation.set(0, i * 0.7, 0);
+                dummy.scale.setScalar(1);
+                dummy.updateMatrix();
+                sm?.setMatrixAt(i, dummy.matrix);
+                fm?.setMatrixAt(i, dummy.matrix);
+            }
+            if (sm) {
+                sm.instanceMatrix.needsUpdate = true;
+                scene.add(sm);
+            }
+            if (fm) {
+                fm.instanceMatrix.needsUpdate = true;
+                scene.add(fm);
+            }
+
+            // sàn
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(20, 20),
+                new THREE.MeshStandardMaterial({
+                    color: 0x4d7a45,
+                    roughness: 0.95,
+                }),
+            );
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            const sunWorld = new THREE.Vector3(18, 26, 14).normalize();
+            const tmpV = new THREE.Vector3();
+            window.__cam = camera;
+            window.__renderer = renderer;
+            window.__scene = scene;
+            function loop(t) {
+                requestAnimationFrame(loop);
+                plantUniforms.uTime.value = t / 1000;
+                tmpV.copy(sunWorld).transformDirection(
+                    camera.matrixWorldInverse,
+                );
+                plantUniforms.uSunViewDir.value.copy(tmpV);
+                renderer.render(scene, camera);
+            }
+            requestAnimationFrame(loop);
+            window.__ready = true;
+        </script>
+    </body>
+</html>

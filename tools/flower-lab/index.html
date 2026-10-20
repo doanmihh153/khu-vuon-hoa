@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Flower Lab — công cụ kiểm thử hoa</title>
+        <style>
+            :root {
+                color-scheme: dark;
+            }
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+                background: #1a1520;
+                overflow: hidden;
+                font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            }
+            #stage canvas {
+                display: block;
+            }
+            /* ───────────  Bảng điều khiển  ─────────── */
+            #panel {
+                position: fixed;
+                top: 12px;
+                left: 12px;
+                width: 236px;
+                padding: 12px 14px;
+                border-radius: 12px;
+                background: rgba(20, 16, 26, 0.82);
+                backdrop-filter: blur(8px);
+                color: #f2e6ee;
+                font-size: 12px;
+                line-height: 1.5;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+                user-select: none;
+            }
+            #panel h1 {
+                margin: 0 0 8px;
+                font-size: 13px;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #ffb7cf;
+            }
+            #panel label {
+                display: block;
+                margin-top: 7px;
+                color: #b9a7b6;
+            }
+            #panel select,
+            #panel input {
+                width: 100%;
+                margin-top: 3px;
+                padding: 4px 6px;
+                border-radius: 6px;
+                border: 1px solid #4a3a4d;
+                background: #241d2c;
+                color: #f2e6ee;
+                font-size: 12px;
+            }
+            #panel input[type="range"] {
+                padding: 0;
+            }
+            #panel .val {
+                float: right;
+                color: #ffd0e0;
+            }
+            #meta {
+                margin-top: 10px;
+                padding-top: 8px;
+                border-top: 1px solid #3a2d3d;
+                color: #8f8195;
+                font-size: 11px;
+            }
+            #hint {
+                position: fixed;
+                right: 12px;
+                bottom: 10px;
+                color: #7d6f80;
+                font-size: 11px;
+                pointer-events: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="stage"></div>
+
+        <div id="panel">
+            <h1>Flower Lab</h1>
+
+            <label for="species">Loài hoa</label>
+            <select id="species"></select>
+
+            <label for="count">Số cây <span class="val" id="countVal"></span></label>
+            <input id="count" type="range" min="1" max="9" step="1" />
+
+            <label for="lod">Mức chi tiết</label>
+            <select id="lod">
+                <option value="high">Cao</option>
+                <option value="medium">Trung bình</option>
+                <option value="low">Thấp</option>
+            </select>
+
+            <label for="open">Độ hé nở <span class="val" id="openVal"></span></label>
+            <input id="open" type="range" min="0" max="1" step="0.01" />
+
+            <div id="meta"></div>
+        </div>
+
+        <div id="hint">Kéo chuột để xoay · lăn để zoom</div>
+
+        <script type="module" src="./lab.js"></script>
+    </body>
+</html>

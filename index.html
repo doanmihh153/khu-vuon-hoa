@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="vi" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5"
+        />
+        <meta name="theme-color" content="#3a1f33" />
+        <title>Vườn Hoa Yêu Thương — 20/10</title>
+        <meta
+            name="description"
+            content="Một khu vườn hoa 3D sống động dành tặng những người phụ nữ thân yêu nhân ngày Phụ nữ Việt Nam 20/10."
+        />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+            rel="stylesheet"
+        />
+
+        <link rel="stylesheet" href="./assets/app.css" />
+        <link
+            rel="icon"
+            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E🌸%3C/text%3E%3C/svg%3E"
+        />
+
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "./node_modules/three/build/three.module.js",
+                    "three/addons/": "./node_modules/three/examples/jsm/",
+                    "gsap": "./node_modules/gsap/index.js"
+                }
+            }
+        </script>
+        <script
+            src="./node_modules/html-to-image/dist/html-to-image.js"
+            defer
+        ></script>
+    </head>
+
+    <body
+        class="min-h-screen overflow-x-hidden bg-[#2b1426] font-body text-white antialiased"
+    >
+        <!-- ═══════════════ NỀN 3D (canvas duy nhất, full-screen) ═══════════════ -->
+        <div
+            id="garden-canvas-container"
+            class="fixed inset-0 z-0 h-[100vh] w-[100vw] overflow-hidden"
+            aria-hidden="true"
+        ></div>
+
+        <!-- Lop phu tinh: vignette + grain + mau hong -->
+        <div
+            id="veil"
+            class="pointer-events-none fixed inset-0 z-10"
+            aria-hidden="true"
+        ></div>
+        <div
+            id="grain"
+            class="pointer-events-none fixed inset-0 z-10 opacity-[0.045] mix-blend-overlay"
+            aria-hidden="true"
+        ></div>
+
+        <!-- ═══════════════ FALLBACK WEBGL ═══════════════ -->
+        <div
+            id="webgl-fallback"
+            class="fixed inset-0 z-[70] hidden items-center justify-center bg-gradient-to-b from-[#3d1f36] to-[#6b3450] p-6"
+        >
+            <div
+                class="max-w-md rounded-3xl border border-white/15 bg-white/10 p-8 text-center backdrop-blur-xl"
+            >
+                <div class="mb-4 text-5xl">🌷</div>
+                <h2 class="font-display text-2xl">Khu vườn chưa thể mở</h2>
+                <p class="mt-3 text-sm leading-relaxed text-white/80">
+                    Trình duyệt của bạn chưa hỗ trợ WebGL, nên khu vườn 3D không
+                    thể hiển thị. Bạn vẫn có thể gửi một tấm thiệp yêu thương
+                    bên dưới.
+                </p>
+                <button
+                    id="fallback-card"
+                    data-open-card
+                    class="mt-6 rounded-full bg-pink-100 px-7 py-3 font-medium text-[#5b2c48] transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                >
+                    Mở tấm thiệp 20/10
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══════════════ MÀN HÌNH CHÀO ĐÓN ═══════════════ -->
+        <section
+            id="welcome"
+            class="fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden px-5 py-10 text-center"
+            style="
+                background:
+                    radial-gradient(
+                        120% 90% at 50% 118%,
+                        rgba(255, 214, 232, 0.3) 0%,
+                        rgba(120, 52, 92, 0.16) 42%,
+                        rgba(38, 16, 33, 0.58) 100%
+                    ),
+                    linear-gradient(
+                        180deg,
+                        #3d1f36 0%,
+                        #5b2c48 55%,
+                        #8a4a63 100%
+                    );
+                transform: translateY(0);
+                transition: transform 1.35s cubic-bezier(0.65, 0, 0.25, 1);
+                will-change: transform;
+            "
+        >
+            <div
+                class="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center"
+            >
+                <!-- 1 · Chào mừng -->
+                <p
+                    id="w-eyebrow"
+                    class="w-reveal text-sm font-medium uppercase tracking-[0.5em] text-pink-100/85 sm:text-base"
+                >
+                    Chào mừng
+                </p>
+
+                <!-- 2 · Chủ nhân khu vườn (thẳng hàng, một dòng) -->
+                <h1
+                    id="w-title"
+                    class="w-reveal mt-4 font-display text-[min(8vw,5.5rem)] uppercase leading-[1.04] tracking-[-0.012em] text-white"
+                    style="
+                        text-shadow:
+                            0 2px 30px rgba(255, 180, 210, 0.35),
+                            0 1px 2px rgba(60, 10, 40, 0.5);
+                    "
+                >
+                    Chủ nhân<span class="block sm:inline"> khu vườn</span>
+                </h1>
+
+                <!-- 3 · Dấu phân cách -->
+                <div
+                    class="w-reveal mt-6 flex items-center gap-3 text-pink-200/70"
+                    aria-hidden="true"
+                >
+                    <span
+                        class="h-px w-12 bg-gradient-to-r from-transparent to-pink-200/60 sm:w-16"
+                    ></span>
+                    <span class="text-[11px] tracking-[0.35em]">- · -</span>
+                    <span
+                        class="h-px w-12 bg-gradient-to-l from-transparent to-pink-200/60 sm:w-16"
+                    ></span>
+                </div>
+
+                <!-- 4 · Tên khu vườn (tiêu đề chính) -->
+                <h2
+                    id="w-name"
+                    class="w-reveal mt-5 font-display text-lg uppercase tracking-[0.3em] text-pink-50/95 sm:text-xl md:text-[1.7rem] md:tracking-[0.36em]"
+                >
+                    Vườn Hoa Yêu Thương
+                </h2>
+
+                <p
+                    id="w-sub"
+                    class="w-reveal mt-5 max-w-xl text-sm font-light leading-relaxed text-pink-50/85 sm:text-base md:text-lg"
+                >
+                    Dành tặng những đóa hoa tuyệt vời nhất<br
+                        class="hidden sm:block"
+                    />
+                    nhân ngày 20/10
+                </p>
+
+                <p
+                    id="w-quote"
+                    class="w-reveal mx-auto mt-6 max-w-lg font-body text-sm italic leading-relaxed text-pink-100/70 sm:text-base"
+                >
+                    “Có những điều đẹp đẽ không cần nói thành lời,<br
+                        class="hidden sm:block"
+                    />
+                    chỉ cần trao đi bằng cả trái tim.”
+                </p>
+
+                <!-- 5 · Thanh tiến trình + trạng thái -->
+                <div class="w-reveal mt-9 flex w-full flex-col items-center">
+                    <div
+                        class="h-[3px] w-52 overflow-hidden rounded-full bg-white/15"
+                    >
+                        <div
+                            id="loader-bar"
+                            class="h-full w-0 rounded-full bg-gradient-to-r from-pink-200 to-amber-200 transition-[width] duration-300"
+                        ></div>
+                    </div>
+                    <p
+                        id="loader-note"
+                        class="mt-3 text-xs tracking-wide text-pink-100/75"
+                        aria-live="polite"
+                    >
+                        Đang gieo hạt cho khu vườn…
+                    </p>
+                    <div
+                        id="welcome-webgl-fallback"
+                        class="hidden flex-col items-center gap-3 pt-2"
+                    >
+                        <p class="max-w-md text-sm text-pink-50/85">
+                            Trình duyệt của bạn chưa mở được vườn 3D. Hãy dùng
+                            Chrome/Safari mới nhất, hoặc mở thiệp trực tiếp:
+                        </p>
+                        <button
+                            id="btn-open-card-fallback"
+                            data-open-card
+                            class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-white/15 px-7 py-3 text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/25"
+                        >
+                            Mở thiệp 20/10
+                        </button>
+                    </div>
+                </div>
+
+                <p
+                    class="w-reveal mt-10 text-[10px] uppercase tracking-[0.3em] text-pink-100/40"
+                >
+                    20 · 10 · Khu vườn của trái tim
+                </p>
+            </div>
+        </section>
+
+        <!-- ═══════════════ HUD ═══════════════ -->
+        <header
+            id="hud"
+            class="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-start justify-between gap-3 p-3 sm:p-5"
+        >
+            <div
+                class="pointer-events-auto flex items-center gap-2.5 rounded-full border border-white/12 bg-[#2c1526]/35 py-2 pl-2.5 pr-4 backdrop-blur-xl sm:gap-3 sm:pr-5"
+            >
+                <span
+                    class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-pink-200 to-rose-300 text-lg shadow-inner"
+                    >🌸</span
+                >
+                <span class="min-w-0">
+                    <span
+                        class="block truncate font-display text-[13px] leading-tight tracking-wide text-pink-50 sm:text-sm"
+                        >Vườn Hoa Yêu Thương</span
+                    >
+                    <span
+                        class="block text-[9px] uppercase tracking-[0.28em] text-pink-100/45"
+                        >Hoa 20/10</span
+                    >
+                </span>
+            </div>
+
+            <nav
+                id="toolbar"
+                class="pointer-events-auto flex flex-wrap items-center justify-end gap-2"
+                aria-label="Điều khiển khu vườn"
+            >
+                <button
+                    id="btn-petal"
+                    class="tool-btn"
+                    data-state="on"
+                    aria-label="Bật hoặc tắt hiệu ứng cánh hoa"
+                    title="Cánh hoa rơi"
+                    aria-pressed="true"
+                >
+                    <i data-lucide="feather"></i
+                    ><span class="tool-label">Cánh hoa</span>
+                </button>
+                <button
+                    id="btn-music"
+                    class="tool-btn"
+                    data-state="off"
+                    aria-label="Bật hoặc tắt nhạc nền và âm thanh"
+                    title="Âm thanh"
+                    aria-pressed="false"
+                >
+                    <i data-lucide="volume-x"></i
+                    ><span class="tool-label">Âm thanh</span>
+                </button>
+                <button
+                    id="btn-fullscreen"
+                    class="tool-btn"
+                    aria-label="Bật hoặc tắt toàn màn hình"
+                    title="Toàn màn hình"
+                >
+                    <i data-lucide="maximize"></i
+                    ><span class="tool-label"></span>
+                </button>
+                <button
+                    id="btn-card"
+                    class="tool-btn tool-btn-accent"
+                    aria-label="Gửi lời yêu thương"
+                    title="Gửi lời yêu thương"
+                >
+                    <i data-lucide="heart-handshake"></i
+                    ><span class="tool-label">Thiệp</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- ═════════ HERO TRÊN VƯỜN: tiêu đề + SCROLL ĐỂ XEM THÊM ═════════ -->
+        <section
+            id="hero"
+            class="pointer-events-none fixed inset-0 z-20 flex flex-col items-center justify-start px-6 pt-[9vh] text-center sm:pt-[11vh]"
+        >
+            <p
+                class="text-xs font-light uppercase tracking-[0.5em] text-pink-100/80 sm:text-sm"
+            >
+                20 · 10 · Phụ nữ Việt Nam
+            </p>
+            <h2
+                class="mt-4 max-w-6xl font-display text-[min(8vw,5.5rem)] leading-[1.12] text-white"
+                style="text-shadow: 0 2px 26px rgba(60, 10, 40, 0.55)"
+            >
+                Chúc mừng ngày<span class="block">
+                    Phụ nữ Việt Nam 20/10</span
+                >
+            </h2>
+            <p
+                id="hero-wish"
+                class="mx-auto mt-6 max-w-xl font-body text-base italic leading-relaxed text-pink-50/90 sm:text-lg"
+                aria-live="polite"
+            ></p>
+            <div
+                id="scroll-hint"
+                class="mt-10 flex flex-col items-center gap-2 text-pink-50/90 transition-opacity duration-500"
+            >
+                <span class="text-[11px] font-medium uppercase tracking-[0.4em]"
+                    >SCROLL ĐỂ XEM THÊM</span
+                >
+                <span
+                    class="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-white/10 backdrop-blur-md"
+                >
+                    <i
+                        data-lucide="chevron-down"
+                        class="h-5 w-5 animate-bounce"
+                    ></i>
+                </span>
+            </div>
+        </section>
+
+        <!-- Vùng cuộn tạo hành trình 10–15s -->
+        <div
+            id="journey-spacer"
+            style="height: 1150vh"
+            aria-hidden="true"
+        ></div>
+
+        <!-- Lớp chuyển dần ra trắng khi camera lao vào tờ giấy -->
+        <div
+            id="whiteout"
+            class="pointer-events-none fixed inset-0 z-40 bg-[#fdf8f4] opacity-0"
+            aria-hidden="true"
+        ></div>
+
+        <!-- ═══════════════ THANH THÔNG TIN HOA ═══════════════ -->
+        <aside
+            id="flower-info"
+            class="pointer-events-none fixed bottom-4 left-1/2 z-30 w-[min(92vw,430px)] -translate-x-1/2 translate-y-6 opacity-0 transition-all duration-500 sm:bottom-6 sm:left-6 sm:translate-x-0"
+            role="dialog"
+            aria-labelledby="fi-name"
+            aria-hidden="true"
+        >
+            <div
+                class="pointer-events-auto max-h-[72vh] overflow-y-auto overscroll-contain rounded-3xl border border-white/15 bg-gradient-to-br from-[#3c1d31]/90 via-[#54263f]/85 to-[#7a3b57]/85 p-5 pr-12 shadow-[0_24px_70px_-24px_rgba(20,4,16,.9)] backdrop-blur-2xl sm:p-6 sm:pr-14"
+            >
+                <button
+                    id="fi-close"
+                    class="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/25 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    aria-label="Đóng thông tin hoa"
+                >
+                    <i data-lucide="x" class="h-4 w-4"></i>
+                </button>
+                <p
+                    class="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-pink-200/70"
+                >
+                    <i data-lucide="sparkles" class="h-3.5 w-3.5"></i
+                    ><span id="fi-latin">Rosa</span>
+                </p>
+                <h2
+                    id="fi-name"
+                    class="font-display text-[26px] leading-tight text-white sm:text-3xl"
+                >
+                    Hoa Hồng
+                </h2>
+                <p
+                    id="fi-desc"
+                    class="mt-3 text-[15px] leading-[1.75] text-pink-50/90"
+                >
+                    Dịu dàng, kiêu hãnh và luôn rực rỡ.
+                </p>
+            </div>
+        </aside>
+
+        <!-- ═══════════════ BONG BAY LỜI CHÚC NỔI ═══════════════ -->
+        <div
+            id="wish-bubble"
+            class="pointer-events-none fixed z-30 max-w-[min(78vw,320px)] -translate-x-1/2 -translate-y-1/2 scale-90 opacity-0 transition-all duration-300"
+            aria-live="polite"
+        >
+            <div
+                class="rounded-2xl border border-pink-100/25 bg-gradient-to-br from-[#45203a]/92 to-[#7c3b58]/92 px-5 py-4 text-center text-sm leading-relaxed text-pink-50 shadow-[0_18px_50px_-18px_rgba(20,4,16,.9)] backdrop-blur-xl"
+            >
+                <span class="block font-body text-base italic leading-snug"
+                    >“<span id="wish-text"></span>”</span
+                >
+                <span
+                    class="mt-2 block text-[10px] uppercase tracking-[0.25em] text-pink-200/60"
+                    >— một lời chúc từ khu vườn</span
+                >
+            </div>
+        </div>
+
+        <!-- ═══════════════ THIỆP CHÚC MỪNG ═══════════════ -->
+        <div
+            id="card-overlay"
+            class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto overscroll-contain p-3 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="card-title"
+        >
+            <div
+                id="card-backdrop"
+                class="fixed inset-0 bg-[#fdf8f4] backdrop-blur-2xl"
+            ></div>
+            <div
+                class="pointer-events-none fixed inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(255,214,232,.55),transparent_70%),radial-gradient(50%_40%_at_90%_100%,rgba(255,236,205,.5),transparent_70%)]"
+                aria-hidden="true"
+            ></div>
+
+            <div id="card-shell" class="relative z-10 my-auto w-full max-w-4xl">
+                <!-- Tấm thiệp -->
+                <article
+                    id="card"
+                    class="card-paper relative overflow-hidden rounded-[30px] bg-[linear-gradient(160deg,#fffaf6_0%,#fdf0ee_46%,#f7e2e6_100%)] shadow-[0_50px_120px_-40px_rgba(120,40,70,.45),0_2px_0_0_rgba(255,255,255,.9)_inset]"
+                >
+                    <!-- Hoa văn nền -->
+                    <svg
+                        class="pointer-events-none absolute -right-10 -top-10 h-56 w-56 text-[#e9b9cb]/45 sm:h-72 sm:w-72"
+                        viewBox="0 0 100 100"
+                        fill="currentColor"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M50 12c6 0 10 6 10 13 0 5-2 9-5 12 3-3 7-5 12-5 8 0 14 7 14 15s-6 15-14 15c-5 0-9-2-12-5 3 3 5 7 5 12 0 8-7 14-15 14s-15-6-15-14c0-5 2-9 5-12-3 3-7 5-12 5-8 0-15-7-15-15s7-15 15-15c5 0 9 2 12 5-3-3-5-7-5-12 0-7 5-13 10-13z"
+                        />
+                    </svg>
+                    <div
+                        class="pointer-events-none absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-[#ffe9c9]/50 blur-3xl"
+                    ></div>
+
+                    <!-- Khung trang trí -->
+                    <div
+                        class="card-frame pointer-events-none absolute inset-x-3 rounded-[22px] border border-[#d99cb4]/35"
+                        aria-hidden="true"
+                    ></div>
+                    <div
+                        class="card-frame pointer-events-none absolute inset-x-[18px] rounded-[16px] border border-[#e2b98a]/35"
+                        aria-hidden="true"
+                    ></div>
+
+                    <div
+                        id="card-petal"
+                        class="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 text-3xl drop-shadow-sm"
+                        aria-hidden="true"
+                    >
+                        🌸
+                    </div>
+
+                    <div class="relative p-6 sm:p-9 md:p-11">
+                        <div class="flex items-start justify-between gap-4">
+                            <p
+                                class="text-[11px] uppercase tracking-[0.4em] text-[#b07b95]"
+                            >
+                                Thiệp chúc mừng · 20/10
+                            </p>
+                            <button
+                                id="card-close"
+                                class="-mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#8a4a68]/10 text-[#7a3b57] transition hover:bg-[#8a4a68]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7a3b57]/60"
+                                aria-label="Đóng thiệp"
+                            >
+                                <i data-lucide="x" class="h-5 w-5"></i>
+                            </button>
+                        </div>
+
+                        <h2
+                            id="card-title"
+                            class="mt-6 max-w-[16ch] font-display text-[26px] leading-[1.22] tracking-[0.01em] text-[#5b1f3f] sm:text-[32px] md:text-[38px]"
+                        >
+                            GỬI BẠN YÊU CỦA TÔI 💌
+                        </h2>
+
+                        <div
+                            class="mt-5 flex items-center gap-3 text-[#d9a3ba]"
+                            aria-hidden="true"
+                        >
+                            <span class="h-px w-12 bg-current/50"></span>
+                            <span class="text-sm">❀</span>
+                            <span class="h-px w-12 bg-current/50"></span>
+                        </div>
+
+                        <div class="mt-7">
+                            <!-- Nội dung -->
+                            <div class="min-w-0">
+                                <p
+                                    id="card-body"
+                                    class="whitespace-pre-line text-[16px] leading-[1.95] text-[#55323f]"
+                                ></p>
+                                <p
+                                    id="card-sign"
+                                    class="mt-7 whitespace-pre-line font-display text-xl italic text-[#8a3a60]"
+                                ></p>
+
+                                <div class="mt-7 flex flex-wrap gap-2.5">
+                                    <button
+                                        id="card-back"
+                                        class="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-[#d9a3ba]/70 bg-white/80 px-5 py-2 text-sm font-medium text-[#8d3159] transition hover:border-[#c04a78]/50 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c04a78]/50"
+                                    >
+                                        <i
+                                            data-lucide="arrow-left"
+                                            class="h-4 w-4"
+                                        ></i
+                                        ><span>Trở về</span>
+                                    </button>
+                                </div>
+                                <p
+                                    id="card-toast"
+                                    class="mt-3 min-h-[20px] text-xs text-[#8d3159]"
+                                    role="status"
+                                    aria-live="polite"
+                                ></p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- BẢNG ẢNH KỶ NIỆM (polaroid) — dưới nội dung thư -->
+                    <figure
+                        id="card-photos"
+                        class="pb"
+                        aria-label="Những khoảnh khắc kỷ niệm"
+                    >
+                        <span class="pb-bg" aria-hidden="true"></span>
+                        <span class="pb-card pb-c1"
+                            ><img
+                                src="./assets/imgs/opt/anh2.jpg"
+                                alt="Khoảnh khắc kỷ niệm"
+                                loading="lazy"
+                                decoding="async"
+                        /></span>
+                        <span class="pb-card pb-c2"
+                            ><img
+                                src="./assets/imgs/opt/anh1.jpg"
+                                alt="Khoảnh khắc kỷ niệm"
+                                loading="lazy"
+                                decoding="async"
+                        /></span>
+                        <span class="pb-card pb-c3"
+                            ><img
+                                src="./assets/imgs/opt/anh3.jpg"
+                                alt="Khoảnh khắc kỷ niệm"
+                                loading="lazy"
+                                decoding="async"
+                        /></span>
+                        <span class="pb-blossom pb-b1" aria-hidden="true"
+                            >🌺</span
+                        >
+                        <span class="pb-blossom pb-b2" aria-hidden="true"
+                            >🌸</span
+                        >
+                    </figure>
+                </article>
+            </div>
+        </div>
+
+        <!-- Node dùng để dựng ảnh tấm thiệp gắn trên thân cây đại thụ -->
+        <div
+            id="tree-card"
+            class="pointer-events-none fixed left-[-10000px] top-0 z-0 w-[720px] bg-gradient-to-br from-[#fff6f0] via-[#fdeaf0] to-[#f3d8e6] p-12 text-[#4d2b3a]"
+        ></div>
+
+        <!-- Node dùng để xuất ảnh thiệp -->
+        <div
+            id="export-card"
+            class="pointer-events-none fixed left-[-10000px] top-0 z-0 w-[720px] bg-gradient-to-br from-[#fff6f0] via-[#fdeaf0] to-[#f3d8e6] p-12 text-[#4d2b3a] shadow-inner"
+        ></div>
+
+        <noscript>
+            <div
+                class="fixed inset-0 z-[80] grid place-items-center bg-[#2b1426] p-8 text-center"
+            >
+                <p class="max-w-md text-sm leading-relaxed">
+                    Khu vườn 3D cần JavaScript để hoạt động. Vui lòng bật
+                    JavaScript rồi tải lại trang.
+                </p>
+            </div>
+        </noscript>
+
+        <script src="./node_modules/lucide/dist/umd/lucide.min.js"></script>
+        <script type="module" src="./src/main.js"></script>
+        <script>
+            window.addEventListener("load", () => {
+                if (window.lucide) lucide.createIcons();
+            });
+            // chạy lại sau khi DOM module chèn nút preset
+            setInterval(() => {
+                if (window.lucide) lucide.createIcons();
+            }, 3000);
+        </script>
+    </body>
+</html>
